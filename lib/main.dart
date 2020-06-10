@@ -1,4 +1,5 @@
 import 'package:dictionary_app/home.dart';
+import 'package:dictionary_app/landing_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -11,7 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      home: LandingPage(),
       theme: ThemeData(
         primaryColor: Colors.purple
       ),

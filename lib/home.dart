@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:dictionary_app/dictionary.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
@@ -14,23 +13,28 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final controller = new TextEditingController();
-
+  StreamController streamController;
+  Stream stream;
   Timer timer;
 
-  Future<List<Dictionary>> search() async {
+  search() async {
+    if (controller.text == null) {
+      streamController.add(null);
+      return;
+    }
+    streamController.add('waiting');
     Response response = await http.get(url + controller.text.trim(),
         headers: {"Authorization": "Token " + token});
-    if (response.statusCode == 200) {
-      final List result = jsonDecode(response.body)['definitions'];
-      List<Dictionary> dictionary =
-          result.map((e) => Dictionary.fromMap(e)).toList();
-      return dictionary;
-    } else
-      return throw ('error ocurred');
+    streamController.add(jsonDecode(response.body));
   }
+
+
+
 
   @override
   void initState() {
+    streamController = StreamController();
+    stream = streamController.stream;
     super.initState();
   }
 
@@ -38,6 +42,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: Text('Dictionary'),
         bottom: PreferredSize(
             child: Row(
               children: <Widget>[
@@ -52,16 +57,16 @@ class _HomePageState extends State<HomePage> {
                     controller: controller,
                     onChanged: (value) {
                       if (timer?.isActive ?? false) timer.cancel();
-                      timer = new Timer(Duration(milliseconds: 1000), () {
+                      timer = new Timer(Duration(milliseconds: 2000), () {
                         search();
                       });
                     },
                     decoration: InputDecoration(
                         suffixIcon: IconButton(
                             icon: Icon(Icons.search,
-                                size: 30, color: Colors.black),
+                                size: 28, color: Colors.black),
                             onPressed: () {
-                             // search();
+                              search();
                             }),
                         labelText: 'Type a word',
                         enabledBorder: InputBorder.none,
@@ -70,27 +75,57 @@ class _HomePageState extends State<HomePage> {
                 )),
               ],
             ),
-            preferredSize: Size.fromHeight(50.0)),
+            preferredSize: Size.fromHeight(80.0)),
       ),
-      body: FutureBuilder(
-          future: search(),
-          builder: (context, snapshot) {
-            List<Dictionary> dictionary = snapshot.data;
-            if (snapshot.data == null) {
-              return Center(child: CircularProgressIndicator());
-            } else {
-              return ListView(
-                  children: dictionary
-                      .map(
-                        (items) => Card(
-                            child: ListTile(
-                         
-                          title: Text(items.type),
-                        )),
-                      )
-                      .toList());
-            }
-          }),
+      body: Container(
+        
+        child: StreamBuilder(
+            stream: stream,
+            builder: (context, snapshot) {
+              if (snapshot.data == null) {
+                return Center(child: Text('Enter a search word'));
+              } else {
+                if (snapshot.data == 'waiting')
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                return ListView.builder(
+                    itemCount: snapshot.data['definitions'].length,
+                    itemBuilder: (context, index) {
+                      final word = snapshot.data['definitions'][index];
+                      return Column(
+                        children: <Widget>[
+                          Align(alignment: Alignment.centerLeft,
+                                                      child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                word['type'],
+                                style: TextStyle(fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ),
+                          word['image_url'] == null
+                              ? Container()
+                              : Container(
+                                  height: 180,
+                                  padding: EdgeInsets.all(20),
+                                  child: Image.network(word['image_url'])),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(word['definition'],style: TextStyle(
+                              fontSize: 20,fontWeight: FontWeight.w500
+                            ),),
+                          ),
+                          
+                        ],
+                      );
+                    });
+              }
+            }),
+      ),
     );
   }
 }
