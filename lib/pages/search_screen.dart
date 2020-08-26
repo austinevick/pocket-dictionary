@@ -18,7 +18,7 @@ class _SearchScreenState extends State<SearchScreen> {
         backgroundColor: Colors.white,
         title: TextField(
           onChanged: (val) {
-            provider.populateDictionaryData(val);
+            provider.populateSearchPage(val);
           },
           controller: controller,
           style: TextStyle(fontSize: 22),
@@ -30,9 +30,9 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
       body: ListView.builder(
-          itemCount: provider.dictionary.length,
+          itemCount: provider.owlbotDictionary.length,
           itemBuilder: (context, index) {
-            var word = provider.dictionary[index];
+            var word = provider.owlbotDictionary[index];
             return Column(
               children: <Widget>[
                 Align(
